@@ -1,48 +1,35 @@
-# Astro Starter Kit: Basics
+Estructura:
 
-```sh
-npm create astro@latest -- --template basics
-```
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
+dloub/
 ├── src/
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+│   ├── components/       # Componentes reutilizables
+│   │   ├── auth/         # Componentes relacionados con autenticación
+│   │   │   ├── Login.tsx
+│   │   │   └── ProtectedRoute.tsx
+│   │   ├── customers/    # CRUD para clientes
+│   │   │   ├── CustomerList.tsx
+│   │   │   ├── CustomerForm.tsx
+│   │   │   └── CustomerDetail.tsx
+│   │   ├── dashboard/    # Componentes del dashboard
+│   │   │   ├── Dashboard.tsx
+│   │   │   └── Sidebar.tsx
+│   │   └── shared/       # Componentes compartidos
+│   │       ├── Modal.tsx
+│   │       ├── Table.tsx
+│   │       └── Form.tsx
+│   ├── layouts/          # Layouts globales
+│   │   └── Layout.astro  # Layout principal
+│   ├── pages/            # Páginas de Astro
+│   │   ├── index.astro   # Página inicial (Login)
+│   │   └── dashboard.astro # Página del dashboard
+│   ├── hooks/            # Hooks personalizados
+│   │   └── useApi.ts     # Hook para manejar llamadas a la API
+│   ├── context/          # Contextos globales
+│   │   └── AuthContext.tsx # Contexto de autenticación
+│   ├── utils/            # Funciones utilitarias
+│   │   └── api.ts        # Configuración de Axios
+│   └── types/            # Tipos de TypeScript
+│       └── api.ts        # Tipos relacionados con la API
+├── public/               # Archivos estáticos
+├── astro.config.mjs      # Configuración de Astro
+└── package.json          # Dependencias y scripts
