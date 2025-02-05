@@ -1,5 +1,5 @@
-Estructura:
 
+```text
 dloub/
 ├── src/
 │   ├── components/       # Componentes reutilizables
@@ -33,3 +33,4 @@ dloub/
 ├── public/               # Archivos estáticos
 ├── astro.config.mjs      # Configuración de Astro
 └── package.json          # Dependencias y scripts
+```
