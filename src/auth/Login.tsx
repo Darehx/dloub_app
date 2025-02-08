@@ -1,22 +1,22 @@
 // src/components/auth/Login.tsx
 import React, { useState } from 'react';
 import api from '../utils/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Usamos useNavigate en lugar de useRouter
 import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Reemplazamos useRouter con useNavigate
   const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const response = await api.post('/token/', { username, password });
-      login(response.data.access);
-      navigate('/dashboard');
+      login(response.data.access); // Almacenar el token en el contexto de autenticación
+      navigate('/dashboard'); // Redirigir al usuario al dashboard
     } catch (err) {
       setError('Credenciales inválidas. Inténtalo de nuevo.');
     }
