@@ -1,14 +1,14 @@
 // src/components/auth/Login.tsx
 import React, { useState } from 'react';
-import api from '../../utils/api';
-import { useRouter } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import api from '../utils/api';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const router = useRouter();
+  const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -16,7 +16,7 @@ const Login: React.FC = () => {
     try {
       const response = await api.post('/token/', { username, password });
       login(response.data.access);
-      router.push('/dashboard');
+      navigate('/dashboard');
     } catch (err) {
       setError('Credenciales inválidas. Inténtalo de nuevo.');
     }
