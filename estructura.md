@@ -2,19 +2,12 @@ dloub/
 ├── src/
 │   ├── components/       # Componentes reutilizables
 │   │   ├── auth/         # Componentes relacionados con autenticación
-│   │   │   ├── Login.tsx
-│   │   │   └── ProtectedRoute.tsx
 │   │   ├── customers/    # CRUD para clientes
-│   │   │   ├── CustomerList.tsx
-│   │   │   ├── CustomerForm.tsx
-│   │   │   └── CustomerDetail.tsx
+│   │   ├── employees/    # CRUD para empleados
+│   │   ├── orders/       # Gestión de órdenes y pedidos
+│   │   ├── services/     # Gestión de servicios, sub-servicios, paquetes y campañas
 │   │   ├── dashboard/    # Componentes del dashboard
-│   │   │   ├── Dashboard.tsx
-│   │   │   └── Sidebar.tsx
-│   │   └── shared/       # Componentes compartidos
-│   │       ├── Modal.tsx
-│   │       ├── Table.tsx
-│   │       └── Form.tsx
+│   │   └── shared/       # Componentes compartidos (tablas, formularios, modales)
 │   ├── layouts/          # Layouts globales
 │   │   └── Layout.astro  # Layout principal
 │   ├── pages/            # Páginas de Astro
