@@ -1,36 +1,53 @@
 // src/context/AuthContext.tsx
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AuthContextType {
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  user: {
+    name?: string;
+    role?: string;
+    avatar?: string;
+  } | null;
+  login: (access: string, refresh: string, userData: any) => void;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('accessToken'));
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
 
-  const login = (token: string) => {
-    localStorage.setItem('accessToken', token);
-    setIsAuthenticated(true);
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem('access_token'));
+  const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem('refresh_token'));
+  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('user') || 'null'));
+
+  const isAuthenticated = !!accessToken;
+
+  const login = (access: string, refresh: string, userData: any) => {
+    localStorage.setItem('access_token', access);
+    localStorage.setItem('refresh_token', refresh);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setAccessToken(access);
+    setRefreshToken(refresh);
+    setUser(userData);
   };
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    setIsAuthenticated(false);
+    console.log('Cerrando sesión...'); // Verifica que se ejecute
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    setAccessToken(null);
+    setRefreshToken(null);
+    setUser(null);
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ accessToken, refreshToken, isAuthenticated, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -38,8 +55,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider');
   return context;
 };

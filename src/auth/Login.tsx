@@ -15,7 +15,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       const response = await api.post('/token/', { username, password });
-      login(response.data.access); // Almacenar el token en el contexto de autenticación
+      login(response.data.access, response.data.refresh, response.data.mockUserData); // Almacenar los tokens en el contexto de autenticación
       navigate('/dashboard'); // Redirigir al usuario al dashboard
     } catch (err) {
       setError('Credenciales inválidas. Inténtalo de nuevo.');

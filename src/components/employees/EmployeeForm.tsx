@@ -1,6 +1,6 @@
-// src/components/employees/EmployeeForm.tsx
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
 interface JobPosition {
   id: number;
@@ -8,32 +8,36 @@ interface JobPosition {
 }
 
 const EmployeeForm: React.FC = () => {
-  const [username, setUsername] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [first_name, setFirstName] = useState<string>('');
-  const [last_name, setLastName] = useState<string>('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [first_name, setFirstName] = useState('');
+  const [last_name, setLastName] = useState('');
   const [position, setPosition] = useState<number | null>(null);
   const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
+  const { isAuthenticated } = useAuth();
 
-  // Cargar los puestos de trabajo al montar el componente
   useEffect(() => {
     const fetchJobPositions = async () => {
       try {
         const response = await api.get('/jobpositions/');
         setJobPositions(response.data);
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching job positions:', error);
+      } finally {
         setLoading(false);
       }
     };
     fetchJobPositions();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      alert('Debes iniciar sesión para registrar un empleado.');
+      return;
+    }
     if (!position) {
       alert('Por favor, selecciona un puesto.');
       return;
@@ -50,71 +54,28 @@ const EmployeeForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-bold">Registrar Nuevo Empleado</h2>
+    <form onSubmit={handleSubmit}>
       <input
         type="text"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         placeholder="Nombre de usuario"
-        className="w-full px-3 py-2 border border-gray-300 rounded-md"
         required
       />
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+      {/* Repite para otros campos */}
+      <select
+        value={position || ''}
+        onChange={(e) => setPosition(Number(e.target.value))}
         required
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Contraseña"
-        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-        required
-      />
-      <input
-        type="text"
-        value={first_name}
-        onChange={(e) => setFirstName(e.target.value)}
-        placeholder="Nombre"
-        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-        required
-      />
-      <input
-        type="text"
-        value={last_name}
-        onChange={(e) => setLastName(e.target.value)}
-        placeholder="Apellido"
-        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-        required
-      />
-      {loading ? (
-        <p>Cargando puestos...</p>
-      ) : (
-        <select
-          value={position || ''}
-          onChange={(e) => setPosition(Number(e.target.value))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          required
-        >
-          <option value="">Selecciona un puesto</option>
-          {jobPositions.map((job) => (
-            <option key={job.id} value={job.id}>
-              {job.name}
-            </option>
-          ))}
-        </select>
-      )}
-      <button
-        type="submit"
-        className="px-4 py-2 bg-indigo-600 text-white rounded-md"
       >
-        Registrar Empleado
-      </button>
+        <option value="">Selecciona un puesto</option>
+        {jobPositions.map((job) => (
+          <option key={job.id} value={job.id}>
+            {job.name}
+          </option>
+        ))}
+      </select>
+      <button type="submit">Registrar Empleado</button>
     </form>
   );
 };
