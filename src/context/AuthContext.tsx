@@ -37,7 +37,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = (access: string, refresh: string, userData: any) => {
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
-    // Asegurar que userData sea un objeto válido o null
     localStorage.setItem('user', JSON.stringify(userData ?? null));
     setAccessToken(access);
     setRefreshToken(refresh);
@@ -46,28 +45,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     console.log('Cerrando sesión...');
-    
     try {
-      // Elimina los datos de localStorage
       localStorage.removeItem('access_token');
-      console.log('Eliminado access_token');
-      
       localStorage.removeItem('refresh_token');
-      console.log('Eliminado refresh_token');
-      
       localStorage.removeItem('user');
-      console.log('Eliminado user');
-  
-      // Actualiza el estado
       setAccessToken(null);
-      console.log('Actualizado accessToken a null');
-      
       setRefreshToken(null);
-      console.log('Actualizado refreshToken a null');
-      
       setUser(null);
-      console.log('Actualizado user a null');
-  
+
       // Pequeño retraso para asegurar la actualización del estado
       await new Promise(resolve => setTimeout(resolve, 100));
       console.log('Estado actualizado y listo para redirigir');

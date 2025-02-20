@@ -1,187 +1,264 @@
-// src/components/Sidebar.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import type { JSX } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FaHome, FaUsers, FaList, FaCog } from 'react-icons/fa'; // Importa íconos de react-icons
+import {
+  FaHome,
+  FaUserCircle,
+  FaList,
+  FaUsers,
+  FaCog,
+  FaSignOutAlt,
+  FaFileInvoiceDollar,
+  FaCode,
+  FaChevronLeft,
+  FaChevronRight,
+} from 'react-icons/fa';
 
+// Props del Sidebar
 interface SidebarProps {
-  logo?: string; // URL del logo
-  navigation?: {
-    name: string;
-    href: string;
-    icon?: React.ReactNode;
-    exact?: boolean;
-  }[];
-  profileOptions?: {
-    name: string;
-    href?: string;
-    onClick?: () => void;
-  }[];
+  logo?: string; // Prop opcional para el logo
 }
 
-const Sidebar = ({ logo, navigation = [], profileOptions = [] }: SidebarProps) => {
+// Tipo para los elementos de navegación con href
+interface NavItemWithHref {
+  type: 'link'; // Discriminador
+  name: string;
+  href: string;
+  icon: JSX.Element;
+  exact?: boolean; // Propiedad opcional para rutas exactas
+}
+
+// Tipo para los elementos de navegación con onClick
+interface NavItemWithOnClick {
+  type: 'button'; // Discriminador
+  name: string;
+  onClick: () => void | Promise<void>;
+  icon: JSX.Element;
+}
+
+// Unión de tipos para los elementos de navegación
+type NavItem = NavItemWithHref | NavItemWithOnClick;
+
+const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isCompact, setIsCompact] = useState(true); // Estado inicial compacto
+
+  // Referencias para manejar clics fuera del menú de perfil
+  const profileRef = useRef<HTMLDivElement>(null);
+  const avatarRef = useRef<HTMLDivElement>(null);
+
   const { pathname } = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Maneja clics fuera del menú de perfil
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node) &&
+        avatarRef.current &&
+        !avatarRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Si el usuario no está autenticado, no muestra el Sidebar
   if (!isAuthenticated) return null;
 
-  // Opciones de navegación por defecto
-  const defaultNav = [
+  // Botones fijos (disponibles para todos los usuarios)
+  const fixedNav: NavItem[] = [
     {
+      type: 'link',
       name: 'Dashboard',
       href: '/dashboard',
-      icon: <FaHome />, // Ícono de inicio
+      icon: <FaHome className="text-xl" />,
       exact: true,
     },
     {
-      name: 'Empleados',
-      href: '/employees',
-      icon: <FaUsers />, // Ícono de usuarios
-    },
-    {
-      name: 'Órdenes',
+      type: 'link',
+      name: 'Pedidos',
       href: '/orders',
-      icon: <FaList />, // Ícono de lista
+      icon: <FaList className="text-xl" />,
     },
     {
-      name: 'Servicios',
-      href: '/services',
-      icon: <FaCog />, // Ícono de configuración
+      type: 'link',
+      name: 'Perfil',
+      href: '/profile',
+      icon: <FaUserCircle className="text-xl" />,
     },
   ];
 
-  // Opciones de perfil por defecto
-  const defaultProfileOptions = [
-    { name: 'Perfil', href: '/profile' },
-    {
-      name: 'Cerrar sesión',
-      onClick: () => {
-        console.log('Botón Cerrar sesión presionado'); // Debugging
-        logout(); // Cierra la sesión
-        console.log('Redirigiendo a /login'); // Debugging
-        navigate('/login'); // Redirige al login
+  // Botones dinámicos (dependen del rol del usuario)
+  const dynamicNav: Record<string, NavItem[]> = {
+    admin: [
+      {
+        type: 'link',
+        name: 'Empleados',
+        href: '/employees',
+        icon: <FaUsers className="text-xl" />,
       },
+      {
+        type: 'link',
+        name: 'Servicios',
+        href: '/services',
+        icon: <FaCog className="text-xl" />,
+      },
+    ],
+    billing: [
+      {
+        type: 'link',
+        name: 'Facturación',
+        href: '/billing',
+        icon: <FaFileInvoiceDollar className="text-xl" />,
+      },
+    ],
+    dev: [
+      {
+        type: 'link',
+        name: 'Configuración',
+        href: '/settings',
+        icon: <FaCog className="text-xl" />,
+      },
+      {
+        type: 'link',
+        name: 'API Logs',
+        href: '/api-logs',
+        icon: <FaCode className="text-xl" />,
+      },
+    ],
+  };
+
+  // Combina los botones fijos con los dinámicos según el rol del usuario
+  const combinedNav = [...fixedNav, ...(dynamicNav[user?.role || 'guest'] || [])];
+
+  // Opciones del menú de perfil
+  const profileOptions: NavItem[] = [
+    {
+      type: 'link',
+      name: 'Perfil',
+      href: '/profile',
+      icon: <FaUserCircle className="text-lg" />,
+    },
+    {
+      type: 'button',
+      name: 'Cerrar sesión',
+      onClick: async () => {
+        await logout();
+        navigate('/login');
+      },
+      icon: <FaSignOutAlt className="text-lg" />,
     },
   ];
 
-  const navItems = navigation.length > 0 ? navigation : defaultNav;
-  const profileItems = profileOptions.length > 0 ? profileOptions : defaultProfileOptions;
-
+  // Función para verificar si un ítem está activo
   const isActive = (href: string, exact = false) => {
     return exact ? pathname === href : pathname.startsWith(href);
   };
 
   return (
-    <>
-      {/* Botón móvil */}
-      <button
-        className="fixed top-4 left-4 z-50 sm:hidden p-2 bg-gray-800 text-white rounded-md shadow-lg"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-        </svg>
-      </button>
+    <div
+      className={`bg-gray-800 text-white min-h-screen flex flex-col transition-all duration-300 ${
+        isCompact ? 'w-20' : 'w-64'
+      }`}
+    >
+      {/* Logo */}
+      <div className="p-4 flex items-center justify-center">
+        {logo && (
+          <img
+            src={logo}
+            alt="Logo"
+            className={`w-10 h-10 transition-all duration-300 ${isCompact ? 'mx-auto' : ''}`}
+          />
+        )}
+      </div>
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-800 text-white shadow-lg transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } sm:translate-x-0`}
-      >
-        <div className="flex h-full flex-col justify-between overflow-y-auto px-4 py-6">
-          {/* Logo */}
-          <div className="mb-8 flex items-center justify-center">
-            <img
-              alt="Logo"
-              src={logo || "https://tailwindui.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"}
-              className="h-10 w-auto"
-            />
-          </div>
-
-          {/* Navegación */}
-          <nav className="space-y-2">
-            {navItems.map((item) => (
+      {/* Navegación (Centrada verticalmente) */}
+      <nav className="flex-grow flex flex-col justify-center">
+        {combinedNav.map((item) => {
+          if (item.type === 'link') {
+            return (
               <Link
-                key={item.name}
+                key={item.href}
                 to={item.href}
-                onClick={() => setIsOpen(false)} // Cierra el Sidebar en móviles
+                onClick={() => setIsOpen(false)}
                 className={`
-                  flex items-center rounded-md px-3 py-2 text-sm font-medium
+                  flex items-center px-4 py-2 rounded-sm text-md font-light transition-colors duration-300
                   ${isActive(item.href, item.exact)
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    ? 'hover:bg-[#3db1ff] text-gray-700 bg-[#CDC1FF]'
+                    : 'text-gray-300 hover:bg-[#3db1ff] hover:text-gray-700'
                   }
                 `}
               >
-                {item.icon && <span className="mr-3">{item.icon}</span>}
-                <span>{item.name}</span>
+                <span className="mr-4">{item.icon}</span>
+                {!isCompact && <span>{item.name}</span>}
               </Link>
-            ))}
-          </nav>
+            );
+          }
+          return null;
+        })}
+      </nav>
 
-          {/* Perfil */}
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center space-x-3">
-              <img
-                alt="Avatar"
-                src={user?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
-                className="h-10 w-10 rounded-full"
-              />
-              <div>
-                <p className="text-sm font-medium text-white">
-                  {user?.name || 'Usuario'}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {user?.role || 'Administrador'}
-                </p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              {profileItems.map((option) => (
-                <div key={option.name}>
-                  {option.href ? (
-                    <Link
-                      to={option.href}
-                      className="block rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-                      onClick={() => setIsOpen(false)} // Cierra el Sidebar en móviles
-                    >
-                      {option.name}
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={option.onClick}
-                      className="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-                      style={{
-                        cursor: 'pointer', // Asegura que el cursor indique que es clickeable
-                      }}
-                    >
-                      {option.name}
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Overlay móvil para cerrar el Sidebar */}
-      {isOpen && (
+      {/* Parte inferior */}
+      <div className="px-4 py-4">
+        {/* Avatar y nombre del usuario */}
         <div
-          className="fixed inset-0 z-30 bg-black/50 sm:hidden"
-          onClick={() => setIsOpen(false)}
-        ></div>
-      )}
-    </>
+          ref={avatarRef}
+          onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+          className="flex items-center cursor-pointer mb-4"
+        >
+          <FaUserCircle className="text-2xl text-gray-400" />
+          {!isCompact && (
+            <div className="ml-2">
+              <p className="text-sm font-medium">{user?.name || 'Usuario'}</p>
+              <p className="text-xs text-blue-400">{user?.role || 'Invitado'}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Menú de perfil */}
+        {isProfileMenuOpen && (
+          <div
+            ref={profileRef}
+            className="absolute bottom-20 left-20 bg-white text-gray-700 rounded-md shadow-lg w-48 z-10"
+          >
+            {profileOptions.map((option) => (
+              <div
+                key={option.name}
+                onClick={() => {
+                  if (option.type === 'button') {
+                    option.onClick();
+                  } else {
+                    setIsProfileMenuOpen(false);
+                  }
+                }}
+                className="px-4 py-2 hover:bg-[#CDC1FF] hover:text-black cursor-pointer flex items-center"
+              >
+                <span className="mr-2">{option.icon}</span>
+                <span>{option.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Botón para alternar el modo compacto */}
+        <button
+          onClick={() => setIsCompact(!isCompact)}
+          className="mt-4 w-full flex items-center justify-center p-2 rounded-md text-gray-400 hover:bg-[#CDC1FF] hover:text-black"
+        >
+          {isCompact ? <FaChevronRight /> : <FaChevronLeft />}
+        </button>
+      </div>
+    </div>
   );
 };
 

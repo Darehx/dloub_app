@@ -14,12 +14,14 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       const response = await api.post('/token/', { username, password });
-      // Asegurar que userData no sea undefined
       login(
         response.data.access,
         response.data.refresh,
-        response.data.mockUserData || { name: 'Jesus', role: 'Rol no especificado' }
+        response.data.mockUserData || { name: 'Jesus', role: 'dev' }
       );
+
+      // Pequeño retraso para asegurar la actualización del estado
+      await new Promise(resolve => setTimeout(resolve, 100));
       navigate('/dashboard');
     } catch (err) {
       setError('Credenciales inválidas. Inténtalo de nuevo.');
