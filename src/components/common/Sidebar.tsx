@@ -17,35 +17,33 @@ import {
 
 // Props del Sidebar
 interface SidebarProps {
-  logo?: string; // Prop opcional para el logo
+  logo?: string;
 }
 
 // Tipo para los elementos de navegación con href
 interface NavItemWithHref {
-  type: 'link'; // Discriminador
+  type: 'link';
   name: string;
   href: string;
   icon: JSX.Element;
-  exact?: boolean; // Propiedad opcional para rutas exactas
+  exact?: boolean;
 }
 
 // Tipo para los elementos de navegación con onClick
 interface NavItemWithOnClick {
-  type: 'button'; // Discriminador
+  type: 'button';
   name: string;
   onClick: () => void | Promise<void>;
   icon: JSX.Element;
 }
 
-// Unión de tipos para los elementos de navegación
 type NavItem = NavItemWithHref | NavItemWithOnClick;
 
 const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isCompact, setIsCompact] = useState(true); // Estado inicial compacto
+  const [isCompact, setIsCompact] = useState(true);
 
-  // Referencias para manejar clics fuera del menú de perfil
   const profileRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +51,6 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Maneja clics fuera del menú de perfil
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -65,90 +62,36 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
         setIsProfileMenuOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Si el usuario no está autenticado, no muestra el Sidebar
   if (!isAuthenticated) return null;
 
-  // Botones fijos (disponibles para todos los usuarios)
   const fixedNav: NavItem[] = [
-    {
-      type: 'link',
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: <FaHome className="text-xl" />,
-      exact: true,
-    },
-    {
-      type: 'link',
-      name: 'Pedidos',
-      href: '/orders',
-      icon: <FaList className="text-xl" />,
-    },
-    {
-      type: 'link',
-      name: 'Perfil',
-      href: '/profile',
-      icon: <FaUserCircle className="text-xl" />,
-    },
+    { type: 'link', name: 'Dashboard', href: '/dashboard', icon: <FaHome className="text-2xl" />, exact: true },
+    { type: 'link', name: 'Pedidos', href: '/orders', icon: <FaList className="text-2xl" /> },
+    { type: 'link', name: 'Perfil', href: '/profile', icon: <FaUserCircle className="text-2xl" /> },
   ];
 
-  // Botones dinámicos (dependen del rol del usuario)
   const dynamicNav: Record<string, NavItem[]> = {
     admin: [
-      {
-        type: 'link',
-        name: 'Empleados',
-        href: '/employees',
-        icon: <FaUsers className="text-xl" />,
-      },
-      {
-        type: 'link',
-        name: 'Servicios',
-        href: '/services',
-        icon: <FaCog className="text-xl" />,
-      },
+      { type: 'link', name: 'Empleados', href: '/employees', icon: <FaUsers className="text-2xl" /> },
+      { type: 'link', name: 'Servicios', href: '/services', icon: <FaCog className="text-2xl" /> },
     ],
     billing: [
-      {
-        type: 'link',
-        name: 'Facturación',
-        href: '/billing',
-        icon: <FaFileInvoiceDollar className="text-xl" />,
-      },
+      { type: 'link', name: 'Facturación', href: '/billing', icon: <FaFileInvoiceDollar className="text-2xl" /> },
     ],
     dev: [
-      {
-        type: 'link',
-        name: 'Configuración',
-        href: '/settings',
-        icon: <FaCog className="text-xl" />,
-      },
-      {
-        type: 'link',
-        name: 'API Logs',
-        href: '/api-logs',
-        icon: <FaCode className="text-xl" />,
-      },
+      { type: 'link', name: 'Configuración', href: '/settings', icon: <FaCog className="text-2xl" /> },
+      { type: 'link', name: 'API Logs', href: '/api-logs', icon: <FaCode className="text-2xl" /> },
     ],
   };
 
-  // Combina los botones fijos con los dinámicos según el rol del usuario
   const combinedNav = [...fixedNav, ...(dynamicNav[user?.role || 'guest'] || [])];
 
-  // Opciones del menú de perfil
   const profileOptions: NavItem[] = [
-    {
-      type: 'link',
-      name: 'Perfil',
-      href: '/profile',
-      icon: <FaUserCircle className="text-lg" />,
-    },
+    { type: 'link', name: 'Perfil', href: '/profile', icon: <FaUserCircle className="text-lg" /> },
     {
       type: 'button',
       name: 'Cerrar sesión',
@@ -160,16 +103,15 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
     },
   ];
 
-  // Función para verificar si un ítem está activo
   const isActive = (href: string, exact = false) => {
     return exact ? pathname === href : pathname.startsWith(href);
   };
 
   return (
     <div
-      className={`bg-gray-800 text-white min-h-screen flex flex-col transition-all duration-300 ${
+      className={`min-h-screen flex flex-col transition-all duration-300 ease-in-out ${
         isCompact ? 'w-20' : 'w-64'
-      }`}
+      } bg-gray-800 backdrop-blur-md border-r border-gray-800/50`}
     >
       {/* Logo */}
       <div className="p-4 flex items-center justify-center">
@@ -182,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
         )}
       </div>
 
-      {/* Navegación (Centrada verticalmente) */}
+      {/* Navegación */}
       <nav className="flex-grow flex flex-col justify-center">
         {combinedNav.map((item) => {
           if (item.type === 'link') {
@@ -192,10 +134,11 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
                 to={item.href}
                 onClick={() => setIsOpen(false)}
                 className={`
-                  flex items-center px-4 py-2 rounded-sm text-md font-light transition-colors duration-300
-                  ${isActive(item.href, item.exact)
-                    ? 'hover:bg-[#3db1ff] text-gray-700 bg-[#CDC1FF]'
-                    : 'text-gray-300 hover:bg-[#3db1ff] hover:text-gray-700'
+                  flex items-center px-4 py-3 mx-2 my-1 rounded-lg text-sm font-medium transition-all duration-200
+                  ${
+                    isActive(item.href, item.exact)
+                      ? 'bg-gray-900 text-white shadow-md border-l-2 border-blue-500'
+                      : 'text-gray-300 hover:bg-gray-900 hover:text-white'
                   }
                 `}
               >
@@ -214,13 +157,13 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
         <div
           ref={avatarRef}
           onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-          className="flex items-center cursor-pointer mb-4"
+          className="flex items-center cursor-pointer mb-4 p-2 rounded-lg hover:bg-gray-800 transition-all duration-200"
         >
           <FaUserCircle className="text-2xl text-gray-400" />
           {!isCompact && (
-            <div className="ml-2">
-              <p className="text-sm font-medium">{user?.name || 'Usuario'}</p>
-              <p className="text-xs text-blue-400">{user?.role || 'Invitado'}</p>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-white">{user?.name || 'Usuario'}</p>
+              <p className="text-xs text-gray-400">{user?.role || 'Invitado'}</p>
             </div>
           )}
         </div>
@@ -229,19 +172,16 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
         {isProfileMenuOpen && (
           <div
             ref={profileRef}
-            className="absolute bottom-20 left-20 bg-white text-gray-700 rounded-md shadow-lg w-48 z-10"
+            className="absolute bottom-20 left-20 bg-gray-900/90 backdrop-blur-md text-white rounded-lg shadow-xl w-48 z-10 border border-gray-800/50"
           >
             {profileOptions.map((option) => (
               <div
                 key={option.name}
                 onClick={() => {
-                  if (option.type === 'button') {
-                    option.onClick();
-                  } else {
-                    setIsProfileMenuOpen(false);
-                  }
+                  if (option.type === 'button') option.onClick();
+                  else setIsProfileMenuOpen(false);
                 }}
-                className="px-4 py-2 hover:bg-[#CDC1FF] hover:text-black cursor-pointer flex items-center"
+                className="px-4 py-2 hover:bg-gray-900 cursor-pointer flex items-center transition-all duration-200"
               >
                 <span className="mr-2">{option.icon}</span>
                 <span>{option.name}</span>
@@ -253,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
         {/* Botón para alternar el modo compacto */}
         <button
           onClick={() => setIsCompact(!isCompact)}
-          className="mt-4 w-full flex items-center justify-center p-2 rounded-md text-gray-400 hover:bg-[#CDC1FF] hover:text-black"
+          className="mt-4 w-full flex items-center justify-center p-2 rounded-lg text-gray-400 hover:bg-gray-900 hover:text-white transition-all duration-200"
         >
           {isCompact ? <FaChevronRight /> : <FaChevronLeft />}
         </button>
