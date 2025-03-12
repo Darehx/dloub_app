@@ -1,0 +1,993 @@
+//src/auth/Login.tsx
+
+import React, { useState } from 'react';
+import api from '../utils/api';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+const Login: React.FC = () => {
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const response = await api.post('/token/', { username, password });
+      login(
+        response.data.access,
+        response.data.refresh,
+        response.data.mockUserData || { name: 'Jesus', role: 'dev' }
+      );
+
+      // Pequeño retraso para asegurar la actualización del estado
+      await new Promise(resolve => setTimeout(resolve, 100));
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Credenciales inválidas. Inténtalo de nuevo.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white">Iniciar Sesión</h2>
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Usuario</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              placeholder="Usuario"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              placeholder="Contraseña"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Iniciar Sesión
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
+
+
+//assets/auth/ProtectedRoute.tsx
+import React from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+interface ProtectedRouteProps {
+  children?: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children || <Outlet />}</>;
+};
+
+export default ProtectedRoute;
+
+//src/components/common/Nav.tsx
+// src/components/Nav.tsx
+import React from 'react';
+import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+
+// Tipos para las props
+interface NavItem {
+  name: string;
+  href: string;
+  current?: boolean;
+}
+
+interface NavProps {
+  logo?: string; // URL del logo
+  navigation?: NavItem[]; // Enlaces de navegación
+  profileOptions?: { name: string; href?: string; onClick?: () => void }[]; // Opciones del menú de perfil
+}
+
+function classNames(...classes: string[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+const Nav: React.FC<NavProps> = ({ logo, navigation = [], profileOptions = [] }) => {
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // Botones predefinidos
+  const defaultNavigation: NavItem[] = [
+    { name: 'Dashboard', href: '/dashboard', current: true },
+    { name: 'Empleados', href: '/employees', current: false },
+    { name: 'Órdenes', href: '/orders', current: false },
+    { name: 'Servicios', href: '/services', current: false },
+  ];
+
+  // Opciones predefinidas del menú de perfil
+  const defaultProfileOptions = [
+    { name: 'Perfil', href: '/profile' },
+    { name: 'Cerrar sesión', onClick: () => { logout(); navigate('/login'); } },
+  ];
+
+  // Combina los enlaces predefinidos con los pasados por props
+  const navItems = navigation.length > 0 ? navigation : defaultNavigation;
+  const profileItems = profileOptions.length > 0 ? profileOptions : defaultProfileOptions;
+
+  if (!isAuthenticated) {
+    return null; // No mostrar el Nav si el usuario no está autenticado
+  }
+
+  return (
+    <Disclosure as="nav" className="bg-gray-800">
+      <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+        <div className="relative flex h-16 items-center justify-between">
+          <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
+            {/* Botón de menú móvil */}
+            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:ring-2 focus:ring-white focus:outline-none">
+              <span className="absolute -inset-0.5" />
+              <span className="sr-only">Abrir menú principal</span>
+              <Bars3Icon aria-hidden="true" className="block size-6 group-data-[open]:hidden" />
+              <XMarkIcon aria-hidden="true" className="hidden size-6 group-data-[open]:block" />
+            </DisclosureButton>
+          </div>
+          <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+            <div className="flex shrink-0 items-center">
+              <img
+                alt="Logo de la empresa"
+                src={logo || "https://tailwindui.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"}
+                className="h-8 w-auto"
+              />
+            </div>
+            <div className="hidden sm:ml-6 sm:block">
+              <div className="flex space-x-4">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={classNames(
+                      item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                      'rounded-md px-3 py-2 text-sm font-medium',
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+            {/* Menú de perfil */}
+            <Menu as="div" className="relative ml-3">
+              <div>
+                <MenuButton className="relative flex rounded-full bg-gray-800 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none">
+                  <span className="absolute -inset-1.5" />
+                  <span className="sr-only">Abrir menú de usuario</span>
+                  <img
+                    alt="Foto de perfil"
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                    className="size-8 rounded-full"
+                  />
+                </MenuButton>
+              </div>
+              <MenuItems
+                transition
+                className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 ring-1 shadow-lg ring-black/5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[enter]:ease-out data-[leave]:duration-75 data-[leave]:ease-in"
+              >
+                {profileItems.map((option) => (
+                  <MenuItem key={option.name}>
+                    {option.href ? (
+                      <Link
+                        to={option.href}
+                        className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
+                      >
+                        {option.name}
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={option.onClick}
+                        className="block w-full px-4 py-2 text-sm text-gray-700 text-left data-[focus]:bg-gray-100 data-[focus]:outline-none"
+                      >
+                        {option.name}
+                      </button>
+                    )}
+                  </MenuItem>
+                ))}
+              </MenuItems>
+            </Menu>
+          </div>
+        </div>
+      </div>
+
+      {/* Menú móvil */}
+      <DisclosurePanel className="sm:hidden">
+        <div className="space-y-1 px-2 pt-2 pb-3">
+          {navItems.map((item) => (
+            <DisclosureButton
+              key={item.name}
+              as={Link}
+              to={item.href}
+              className={classNames(
+                item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                'block rounded-md px-3 py-2 text-base font-medium',
+              )}
+            >
+              {item.name}
+            </DisclosureButton>
+          ))}
+        </div>
+      </DisclosurePanel>
+    </Disclosure>
+  );
+};
+
+export default Nav;
+
+//src/components/common/Sidebar.tsx
+
+import React, { useState, useEffect, useRef } from 'react';
+import type { JSX } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import {
+  FaHome,
+  FaUserCircle,
+  FaList,
+  FaUsers,
+  FaCog,
+  FaSignOutAlt,
+  FaFileInvoiceDollar,
+  FaCode,
+  FaChevronLeft,
+  FaChevronRight,
+} from 'react-icons/fa';
+
+// Props del Sidebar
+interface SidebarProps {
+  logo?: string;
+}
+
+// Tipo para los elementos de navegación con href
+interface NavItemWithHref {
+  type: 'link';
+  name: string;
+  href: string;
+  icon: JSX.Element;
+  exact?: boolean;
+}
+
+// Tipo para los elementos de navegación con onClick
+interface NavItemWithOnClick {
+  type: 'button';
+  name: string;
+  onClick: () => void | Promise<void>;
+  icon: JSX.Element;
+}
+
+type NavItem = NavItemWithHref | NavItemWithOnClick;
+
+const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isCompact, setIsCompact] = useState(true);
+
+  const profileRef = useRef<HTMLDivElement>(null);
+  const avatarRef = useRef<HTMLDivElement>(null);
+
+  const { pathname } = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node) &&
+        avatarRef.current &&
+        !avatarRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (!isAuthenticated) return null;
+
+  const fixedNav: NavItem[] = [
+    { type: 'link', name: 'Dashboard', href: '/dashboard', icon: <FaHome className="text-2xl" />, exact: true },
+    { type: 'link', name: 'Pedidos', href: '/orders', icon: <FaList className="text-2xl" /> },
+    { type: 'link', name: 'Perfil', href: '/profile', icon: <FaUserCircle className="text-2xl" /> },
+  ];
+
+  const dynamicNav: Record<string, NavItem[]> = {
+    admin: [
+      { type: 'link', name: 'Empleados', href: '/employees', icon: <FaUsers className="text-2xl" /> },
+      { type: 'link', name: 'Servicios', href: '/services', icon: <FaCog className="text-2xl" /> },
+    ],
+    billing: [
+      { type: 'link', name: 'Facturación', href: '/billing', icon: <FaFileInvoiceDollar className="text-2xl" /> },
+    ],
+    dev: [
+      { type: 'link', name: 'Configuración', href: '/settings', icon: <FaCog className="text-2xl" /> },
+      { type: 'link', name: 'API Logs', href: '/api-logs', icon: <FaCode className="text-2xl" /> },
+    ],
+  };
+
+  const combinedNav = [...fixedNav, ...(dynamicNav[user?.role || 'guest'] || [])];
+
+  const profileOptions: NavItem[] = [
+    { type: 'link', name: 'Perfil', href: '/profile', icon: <FaUserCircle className="text-lg" /> },
+    {
+      type: 'button',
+      name: 'Cerrar sesión',
+      onClick: async () => {
+        await logout();
+        navigate('/login');
+      },
+      icon: <FaSignOutAlt className="text-lg" />,
+    },
+  ];
+
+  const isActive = (href: string, exact = false) => {
+    return exact ? pathname === href : pathname.startsWith(href);
+  };
+
+  return (
+    <div
+      className={`min-h-screen flex flex-col transition-all duration-300 ease-in-out ${
+        isCompact ? 'w-20' : 'w-64'
+      } bg-gray-800 backdrop-blur-md border-r border-gray-800/50`}
+    >
+      {/* Logo */}
+      <div className="p-4 flex items-center justify-center">
+        {logo && (
+          <img
+            src={logo}
+            alt="Logo"
+            className={`w-10 h-10 transition-all duration-300 ${isCompact ? 'mx-auto' : ''}`}
+          />
+        )}
+      </div>
+
+      {/* Navegación */}
+      <nav className="flex-grow flex flex-col justify-center">
+        {combinedNav.map((item) => {
+          if (item.type === 'link') {
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => setIsOpen(false)}
+                className={`
+                  flex items-center px-4 py-3 mx-2 my-1 rounded-lg text-sm font-medium transition-all duration-200
+                  ${
+                    isActive(item.href, item.exact)
+                      ? 'bg-gray-900 text-white shadow-md border-l-2 border-blue-500'
+                      : 'text-gray-300 hover:bg-gray-900 hover:text-white'
+                  }
+                `}
+              >
+                <span className="mr-4">{item.icon}</span>
+                {!isCompact && <span>{item.name}</span>}
+              </Link>
+            );
+          }
+          return null;
+        })}
+      </nav>
+
+      {/* Parte inferior */}
+      <div className="px-4 py-4">
+        {/* Avatar y nombre del usuario */}
+        <div
+          ref={avatarRef}
+          onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+          className="flex items-center cursor-pointer mb-4 p-2 rounded-lg hover:bg-gray-800 transition-all duration-200"
+        >
+          <FaUserCircle className="text-2xl text-gray-400" />
+          {!isCompact && (
+            <div className="ml-3">
+              <p className="text-sm font-medium text-white">{user?.name || 'Usuario'}</p>
+              <p className="text-xs text-gray-400">{user?.role || 'Invitado'}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Menú de perfil */}
+        {isProfileMenuOpen && (
+          <div
+            ref={profileRef}
+            className="absolute bottom-20 left-20 bg-gray-900/90 backdrop-blur-md text-white rounded-lg shadow-xl w-48 z-10 border border-gray-800/50"
+          >
+            {profileOptions.map((option) => (
+              <div
+                key={option.name}
+                onClick={() => {
+                  if (option.type === 'button') option.onClick();
+                  else setIsProfileMenuOpen(false);
+                }}
+                className="px-4 py-2 hover:bg-gray-900 cursor-pointer flex items-center transition-all duration-200"
+              >
+                <span className="mr-2">{option.icon}</span>
+                <span>{option.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Botón para alternar el modo compacto */}
+        <button
+          onClick={() => setIsCompact(!isCompact)}
+          className="mt-4 w-full flex items-center justify-center p-2 rounded-lg text-gray-400 hover:bg-gray-900 hover:text-white transition-all duration-200"
+        >
+          {isCompact ? <FaChevronRight /> : <FaChevronLeft />}
+        </button>
+      </div> nbv 
+    </div>
+  );
+};
+
+export default Sidebar;
+
+//src/components/employees/EmployeeForm.tsx
+
+import React, { useState, useEffect } from 'react';
+import api from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
+
+interface JobPosition {
+  id: number;
+  name: string;
+}
+
+const EmployeeForm: React.FC = () => {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [first_name, setFirstName] = useState('');
+  const [last_name, setLastName] = useState('');
+  const [position, setPosition] = useState<number | null>(null);
+  const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const fetchJobPositions = async () => {
+      try {
+        const response = await api.get('/jobpositions/');
+        setJobPositions(response.data);
+      } catch (error) {
+        console.error('Error fetching job positions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobPositions();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      alert('Debes iniciar sesión para registrar un empleado.');
+      return;
+    }
+    if (!position) {
+      alert('Por favor, selecciona un puesto.');
+      return;
+    }
+    try {
+      await api.post('/employees/', {
+        user: { username, email, password, first_name, last_name },
+        position,
+      });
+      alert('Empleado registrado exitosamente');
+    } catch (error) {
+      console.error('Error registering employee:', error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Nombre de usuario"
+        required
+      />
+      {/* Repite para otros campos */}
+      <select
+        value={position || ''}
+        onChange={(e) => setPosition(Number(e.target.value))}
+        required
+      >
+        <option value="">Selecciona un puesto</option>
+        {jobPositions.map((job) => (
+          <option key={job.id} value={job.id}>
+            {job.name}
+          </option>
+        ))}
+      </select>
+      <button type="submit">Registrar Empleado</button>
+    </form>
+  );
+};
+
+export default EmployeeForm;
+
+//assets/components/employees/Employees.tsx
+
+import React from 'react';
+
+const Employees = () => {
+  return (
+    <div>
+      <h1>Hola, Empleados</h1>
+    </div>
+  );
+};
+
+export default Employees;
+
+//src/components/orders/
+// src/components/orders/OrderForm.tsx
+import React, { useState } from 'react';
+import api from '../../utils/api';
+
+interface OrderFormProps {
+  customerId: number;
+}
+
+const OrderForm: React.FC<OrderFormProps> = ({ customerId }) => {
+  const [services, setServices] = useState<{ service: number; quantity: number }[]>([]);
+  const [note, setNote] = useState<string>('');
+
+  const handleAddService = () => {
+    setServices([...services, { service: 0, quantity: 1 }]);
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      await api.post('/orders/', {
+        customer: customerId,
+        services: services.map((s) => ({
+          service: s.service,
+          quantity: s.quantity,
+        })),
+        note,
+      });
+      alert('Orden creada exitosamente');
+    } catch (error) {
+      console.error('Error creating order:', error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className="text-xl font-bold">Crear Nueva Orden</h2>
+      {services.map((service, index) => (
+        <div key={index} className="flex space-x-2">
+          <input
+            type="number"
+            value={service.service}
+            onChange={(e) =>
+              setServices(
+                services.map((s, i) =>
+                  i === index ? { ...s, service: parseInt(e.target.value) } : s
+                )
+              )
+            }
+            placeholder="ID del servicio"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+          <input
+            type="number"
+            value={service.quantity}
+            onChange={(e) =>
+              setServices(
+                services.map((s, i) =>
+                  i === index ? { ...s, quantity: parseInt(e.target.value) } : s
+                )
+              )
+            }
+            placeholder="Cantidad"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={handleAddService}
+        className="px-4 py-2 bg-green-500 text-white rounded-md"
+      >
+        Agregar Servicio
+      </button>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Notas adicionales"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+      />
+      <button
+        type="submit"
+        className="px-4 py-2 bg-indigo-600 text-white rounded-md"
+      >
+        Crear Orden
+      </button>
+    </form>
+  );
+};
+
+export default OrderForm;
+
+import React from 'react';
+
+const Orders = () => {
+  return (
+    <div>
+      <h1>Hola, Ordenes</h1>
+    </div>
+  );
+};
+
+export default Orders;
+
+//src/components/Profile/
+
+import React from 'react';
+
+const Profile = () => {
+  return (
+    <div>
+      <h1>Hola, Ordenes</h1>
+    </div>
+  );
+};
+
+export default Profile;
+
+//src/components/services/
+
+const NotFound: React.FC = () => {
+    return (
+      <div>
+        <h1>404 - Página no encontrada</h1>
+        <p>La página que buscas no existe.</p>
+      </div>
+    );
+  };
+
+    export default NotFound;
+
+    // src/components/UserPanel.tsx
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import api from '../utils/api';
+
+const UserPanel: React.FC = () => {
+  const { username } = useParams<{ username: string }>();
+  const [user, setUser] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userResponse = await api.get(`/customers/${username}/`);
+        setUser(userResponse.data);
+
+        const ordersResponse = await api.get(`/customers/${username}/orders/`);
+        setOrders(ordersResponse.data);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchData();
+  }, [username]);
+
+  if (!user) return <p>Cargando...</p>;
+
+  return (
+    <div className="p-8">
+      <h1 className="text-3xl font-bold mb-6">Bienvenido, {user.first_name} {user.last_name}</h1>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <p className="text-gray-700 dark:text-gray-300">
+          <strong>Teléfono:</strong> {user.phone}
+        </p>
+        <p className="text-gray-700 dark:text-gray-300">
+          <strong>Dirección:</strong> {user.address}
+        </p>
+      </div>
+      <h2 className="text-2xl font-bold mt-8 mb-4">Historial de Pedidos</h2>
+      <table className="min-w-full bg-white dark:bg-gray-800 border border-gray-300">
+        <thead>
+          <tr>
+            <th className="py-2 px-4 border-b">ID</th>
+            <th className="py-2 px-4 border-b">Estado</th>
+            <th className="py-2 px-4 border-b">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => (
+            <tr key={order.id}>
+              <td className="py-2 px-4 border-b">{order.id}</td>
+              <td className="py-2 px-4 border-b">{order.status}</td>
+              <td className="py-2 px-4 border-b">${order.total_amount.toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default UserPanel;
+
+//src/context/
+
+import React, { createContext, useContext, useState } from 'react';
+
+interface AuthContextType {
+  accessToken: string | null;
+  refreshToken: string | null;
+  isAuthenticated: boolean;
+  user: {
+    name?: string;
+    role?: string;
+    avatar?: string;
+  } | null;
+  login: (access: string, refresh: string, userData: any) => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem('access_token'));
+  const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem('refresh_token'));
+  const [user, setUser] = useState<any>(() => {
+    const userData = localStorage.getItem('user');
+    try {
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      return null;
+    }
+  });
+
+  const isAuthenticated = !!accessToken;
+
+  const login = (access: string, refresh: string, userData: any) => {
+    localStorage.setItem('access_token', access);
+    localStorage.setItem('refresh_token', refresh);
+    localStorage.setItem('user', JSON.stringify(userData ?? null));
+    setAccessToken(access);
+    setRefreshToken(refresh);
+    setUser(userData ?? null);
+  };
+
+  const logout = async () => {
+    console.log('Cerrando sesión...');
+    try {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      setAccessToken(null);
+      setRefreshToken(null);
+      setUser(null);
+
+      // Pequeño retraso para asegurar la actualización del estado
+      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('Estado actualizado y listo para redirigir');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ accessToken, refreshToken, isAuthenticated, user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider');
+  return context;
+};
+
+//src/dashboard/
+
+// src/components/dashboard/Dashboard.tsx
+import React from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Navigate } from 'react-router-dom';
+
+
+const Dashboard: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <p>Bienvenido al panel de control.</p>
+    </div>
+  );
+};
+
+export default Dashboard;
+
+---
+// src/layouts/Layout.astro
+import "../styles/global.css";
+---
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../styles/global.css" />
+    <title>Dloub</title>
+  </head>
+  <body class="bg-gray-100">
+    <slot />
+  </body>
+</html>
+
+---
+// src/pages/index.astro
+import Layout from '../layouts/Layout.astro';
+import App from '../App.tsx'; 
+
+---
+
+<Layout>
+  <App client:only="react" />
+</Layout>
+
+//src/styles/
+@import "tailwindcss";
+
+
+// src/utils/api.ts
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:8000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor para agregar el token JWT
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// Interceptor para manejar errores 401 (token expirado)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        const response = await axios.post('/token/refresh/', { refresh: refreshToken });
+
+        localStorage.setItem('access_token', response.data.access);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+
+//App.tsx
+
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './auth/Login';
+import Dashboard from './dashboard/Dashboard';
+import Employees from './components/employees/Employees';
+import Orders from './components/orders/Orders';
+import Services from './components/services/Services';
+import Profile from './components/Profile/Profile';
+import Sidebar from './components/common/Sidebar';
+
+// Componente para proteger rutas
+const ProtectedRoute = () => {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Outlet />;
+};
+
+const AppContent = () => {
+  return (
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      <Sidebar logo="/logo.png" />
+      {/* Contenido principal */}
+      <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
+        <Routes>
+          {/* Rutas públicas */}
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/login" element={<Login />} />
+          {/* Rutas protegidas */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/employees" element={<Employees />} />
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
+        </Routes>
+      </div>
+    </div>
+  );
+};
+
+const App = () => {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+};
+
+export default App;

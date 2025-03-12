@@ -1,21 +1,20 @@
-// src/utils/api.ts
 import axios from 'axios';
+import { useCookies } from 'react-cookie';
 
 const api = axios.create({
   baseURL: 'http://localhost:8000/api',
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Envía cookies automáticamente
 });
 
-// Interceptor para agregar el token JWT
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const [cookies] = useCookies(['access_token']);
+  if (cookies.access_token) config.headers.Authorization = `Bearer ${cookies.access_token}`;
   return config;
 });
 
-// Interceptor para manejar errores 401 (token expirado)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -25,15 +24,15 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        const response = await axios.post('/token/refresh/', { refresh: refreshToken });
+        const [cookies] = useCookies(['refresh_token']);
+        const response = await axios.post('/token/refresh/', { refresh: cookies.refresh_token });
 
-        localStorage.setItem('access_token', response.data.access);
+        setCookie('access_token', response.data.access, { path: '/', secure: true, sameSite: 'strict' });
         api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
         return api(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        removeCookie('access_token');
+        removeCookie('refresh_token');
         window.location.href = '/login';
       }
     }

@@ -2,12 +2,30 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../utils/api';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+
+
+
+ 
+
+interface User {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  address: string;
+}
+
+interface Order {
+  id: number;
+  status: string;
+  total_amount: number;
+}
 
 const UserPanel: React.FC = () => {
   const { username } = useParams<{ username: string }>();
-  const [user, setUser] = useState<any>(null);
-  const [orders, setOrders] = useState<any[]>([]);
-
+  const [user, setUser] = useState<User | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -24,7 +42,15 @@ const UserPanel: React.FC = () => {
     fetchData();
   }, [username]);
 
-  if (!user) return <p>Cargando...</p>;
+  if (!user) {
+    return (
+      <div className="p-8">
+        <Skeleton height={30} width={200} />
+        <Skeleton height={20} width={150} />
+        <Skeleton height={20} width={150} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">

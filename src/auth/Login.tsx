@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
+
+
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState<string>('');
@@ -14,17 +17,11 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       const response = await api.post('/token/', { username, password });
-      login(
-        response.data.access,
-        response.data.refresh,
-        response.data.mockUserData || { name: 'Jesus', role: 'dev' }
-      );
-
-      // Pequeño retraso para asegurar la actualización del estado
-      await new Promise(resolve => setTimeout(resolve, 100));
+      login(response.data.access, response.data.refresh, response.data.user);
+      toast.success('Inicio de sesión exitoso');
       navigate('/dashboard');
     } catch (err) {
-      setError('Credenciales inválidas. Inténtalo de nuevo.');
+      toast.error('Credenciales inválidas. Inténtalo de nuevo.');
     }
   };
 
