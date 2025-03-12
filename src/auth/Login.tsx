@@ -3,6 +3,7 @@ import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie'; // Importación faltante
 
 
 
@@ -17,10 +18,21 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       const response = await api.post('/token/', { username, password });
-      login(response.data.access, response.data.refresh, response.data.user);
-      toast.success('Inicio de sesión exitoso');
+      const { access, refresh } = response.data;
+
+      // Configuración recomendada para entornos de desarrollo
+      const cookieOptions = {
+        path: '/',
+        secure: process.env.NODE_ENV === 'production', // Solo seguro en producción
+        sameSite: 'Lax' as const // Más compatible con navegadores modernos
+      };
+
+      Cookies.set('access_token', access, cookieOptions);
+      Cookies.set('refresh_token', refresh, cookieOptions);
+
       navigate('/dashboard');
     } catch (err) {
+      console.error('Error al iniciar sesión:', err);
       toast.error('Credenciales inválidas. Inténtalo de nuevo.');
     }
   };

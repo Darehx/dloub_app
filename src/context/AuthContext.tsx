@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { useCookies } from 'react-cookie'; // Usamos react-cookie para manejar cookies
+import Cookies from 'js-cookie'; // Usamos js-cookie para manejar cookies
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -15,20 +15,19 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [cookies, setCookie, removeCookie] = useCookies(['access_token', 'refresh_token']);
   const [user, setUser] = useState<any>(null);
 
-  const isAuthenticated = !!cookies.access_token;
+  const isAuthenticated = !!Cookies.get('access_token'); // Verifica si hay un token de acceso
 
   const login = (access: string, refresh: string, userData: any) => {
-    setCookie('access_token', access, { path: '/', secure: true, sameSite: 'strict' });
-    setCookie('refresh_token', refresh, { path: '/', secure: true, sameSite: 'strict' });
+    Cookies.set('access_token', access, { path: '/', secure: true, sameSite: 'strict' });
+    Cookies.set('refresh_token', refresh, { path: '/', secure: true, sameSite: 'strict' });
     setUser(userData ?? null);
   };
 
   const logout = () => {
-    removeCookie('access_token');
-    removeCookie('refresh_token');
+    Cookies.remove('access_token', { path: '/' });
+    Cookies.remove('refresh_token', { path: '/' });
     setUser(null);
   };
 

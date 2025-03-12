@@ -197,7 +197,7 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
         >
           {isCompact ? <FaChevronRight /> : <FaChevronLeft />}
         </button>
-      </div> nbv 
+      </div>
     </div>
   );
 };
