@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
-import Cookies from 'js-cookie'; // Usamos js-cookie para manejar cookies
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
+import api from '../utils/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -16,19 +17,45 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!Cookies.get('access_token'));
 
-  const isAuthenticated = !!Cookies.get('access_token'); // Verifica si hay un token de acceso
+  // Verifica la autenticación al montar el componente
+  useEffect(() => {
+    const checkAuth = async () => {
+      const accessToken = Cookies.get('access_token');
+      if (accessToken) {
+        try {
+          const response = await api.get('/user/', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          setUser(response.data);
+          setIsAuthenticated(true);
+        } catch (err) {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      }
+    };
+    checkAuth();
+  }, []);
 
   const login = (access: string, refresh: string, userData: any) => {
-    Cookies.set('access_token', access, { path: '/', secure: true, sameSite: 'strict' });
-    Cookies.set('refresh_token', refresh, { path: '/', secure: true, sameSite: 'strict' });
+    const cookieOptions = {
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict' as const,
+    };
+    Cookies.set('access_token', access, cookieOptions);
+    Cookies.set('refresh_token', refresh, cookieOptions);
     setUser(userData ?? null);
+    setIsAuthenticated(true);
   };
 
   const logout = () => {
     Cookies.remove('access_token', { path: '/' });
     Cookies.remove('refresh_token', { path: '/' });
     setUser(null);
+    setIsAuthenticated(false);
   };
 
   return (

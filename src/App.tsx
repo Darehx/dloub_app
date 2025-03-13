@@ -24,7 +24,7 @@ const AppContent = () => {
       {/* Sidebar */}
       <Sidebar logo="/logo.png" />
       {/* Contenido principal */}
-      <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
+      <div className="flex-1 overflow-y-auto bg-gray-900">
         <Routes>
           {/* Rutas públicas */}
           <Route path="/" element={<Navigate to="/dashboard" />} />
