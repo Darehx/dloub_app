@@ -15,12 +15,13 @@ import {
   FaChevronRight,
 } from 'react-icons/fa';
 
-// Props del Sidebar
-interface SidebarProps {
-  logo?: string;
-}
+// Define el logo como una constante (asegúrate de que la ruta sea la correcta)
+const logo = '/Logo_crystal_2024.svg';
 
-// Tipo para los elementos de navegación con href
+// Elimina la prop logo del SidebarProps
+interface SidebarProps {}
+
+// Tipos para los elementos de navegación
 interface NavItemWithHref {
   type: 'link';
   name: string;
@@ -29,7 +30,6 @@ interface NavItemWithHref {
   exact?: boolean;
 }
 
-// Tipo para los elementos de navegación con onClick
 interface NavItemWithOnClick {
   type: 'button';
   name: string;
@@ -39,7 +39,7 @@ interface NavItemWithOnClick {
 
 type NavItem = NavItemWithHref | NavItemWithOnClick;
 
-const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
+const Sidebar: React.FC<SidebarProps> = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isCompact, setIsCompact] = useState(true);
@@ -115,13 +115,11 @@ const Sidebar: React.FC<SidebarProps> = ({ logo }) => {
     >
       {/* Logo */}
       <div className="p-4 flex items-center justify-center">
-        {logo && (
-          <img
-            src={logo}
-            alt="Logo"
-            className={`w-10 h-10 transition-all duration-300 ${isCompact ? 'mx-auto' : ''}`}
-          />
-        )}
+        <img
+          src={logo}
+          alt="Logo"
+          className={`w-10 h-10 transition-all duration-300 ${isCompact ? 'mx-auto' : ''}`}
+        />
       </div>
 
       {/* Navegación */}

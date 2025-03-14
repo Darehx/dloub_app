@@ -49,9 +49,9 @@ const Login: React.FC = () => {
       <div className="w-full max-w-md p-8 space-y-6 bg-[#141f33] rounded-lg shadow-lg">
         {/* Logo */}
         <div className="flex justify-center">
-          <img src='/Logo_crystal_2024.svg' className="h-28 w-auto" alt="Logo" />
+          <img src='/1.png' className="h-28 w-auto" alt="Logo" />
         </div>
-        <h2 className="text-2xl font-bold text-center text-white">Iniciar Sesión</h2>
+      
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300">Usuario</label>
