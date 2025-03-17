@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 1862 15" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D6DE21"/>    <!-- Amarillo inicial -->
+      <stop offset="50%" stop-color="#FF0000"/>   <!-- Rojo en el centro -->
+      <stop offset="100%" stop-color="#00FFFF"/>  <!-- Cyan final -->
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#gradient)"/>
+</svg>

@@ -15,6 +15,7 @@ import {
   FaChevronRight,
 } from 'react-icons/fa';
 
+
 // Define el logo como una constante (asegúrate de que la ruta sea la correcta)
 const logo = '/Logo_crystal_2024.svg';
 
@@ -111,16 +112,26 @@ const Sidebar: React.FC<SidebarProps> = () => {
     <div
       className={`min-h-screen flex flex-col transition-all duration-300 ease-in-out ${
         isCompact ? 'w-20' : 'w-64'
-      } bg-gray-800 backdrop-blur-md border-r border-gray-800/50`}
+      } bg-[#182336] backdrop-blur-md border-r border-gray-800/50`}
     >
       {/* Logo */}
-      <div className="p-4 flex items-center justify-center">
-        <img
-          src={logo}
-          alt="Logo"
-          className={`w-10 h-10 transition-all duration-300 ${isCompact ? 'mx-auto' : ''}`}
-        />
-      </div>
+      <div className={`p-4 flex items-center justify-center ${isCompact ? 'flex-wrap' : 'flex-col'}`}>
+  <img
+    src={logo}
+    alt="Logo"
+    className={`transition-all duration-300 ${
+      isCompact ? 'w-8 h-8' : 'w-10 h-10'
+    }`}
+  />
+   <img 
+    src="/OwariLine.svg" 
+    alt="Separador" 
+    className={`transition-all duration-300 ${
+      isCompact ? 'w-8 h-8 ml-1' : 'w-10 h-10 ml-2'
+    } filter brightness-100 contrast-100`} // Añade estas clases
+    style={{ opacity: 1 }} // Fuerza la opacidad a 1
+  />
+</div>
 
       {/* Navegación */}
       <nav className="flex-grow flex flex-col justify-center">

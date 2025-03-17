@@ -82,7 +82,7 @@ const Login: React.FC = () => {
             disabled={loading}
             className={`w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white transition-all duration-200 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
           >
-            {loading ? 'Cargando...' : 'DLOUB+'}
+            {loading ? 'Cargando...' : 'Entrar'}
           </button>
         </form>
       </div>
