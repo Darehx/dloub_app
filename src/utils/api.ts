@@ -1,13 +1,38 @@
 import axios from 'axios';
 import Cookies from 'js-cookie'; // Usamos js-cookie para manejar cookies
+import MockAdapter from 'axios-mock-adapter';
+
+
+
+// Importa los mocks usando `import`
+import tokenMock from './mocks/token.json';
+import tokenRefreshMock from './mocks/token-refresh.json';
+import userMock from './mocks/user.json';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true, // Envía cookies automáticamente
+  baseURL: process.env.NODE_ENV === 'desarrollo' 
+    ? 'http://localhost:8000/api' 
+    : '', // BaseURL vacía para desarrollo
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
+
+// Configuración de mocks para desarrollo
+if (process.env.NODE_ENV !== 'production') {
+  const mock = new MockAdapter(api, { delayResponse: 500 });
+
+  // Mock para inicio de sesión
+  mock.onPost('/api/token/').reply(200, tokenMock);
+  
+  // Mock para refresco de token
+  mock.onPost('/api/token/refresh/').reply(200, tokenRefreshMock);
+  
+  // Mock para datos de usuario
+  mock.onGet('/api/user/').reply(200, userMock);
+  
+  // Mock para manejar redirecciones
+  mock.onAny().reply(200, {});
+}
 
 api.interceptors.request.use((config) => {
   const accessToken = Cookies.get('access_token'); // Obtén el token de acceso desde las cookies

@@ -22,18 +22,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Verifica la autenticación al montar el componente
   useEffect(() => {
     const checkAuth = async () => {
-      const accessToken = Cookies.get('access_token');
-      if (accessToken) {
-        try {
-          const response = await api.get('/user/', {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
+      try {
+        const accessToken = Cookies.get('access_token');
+        if (accessToken) {
+          const response = await api.get('/api/user/');
           setUser(response.data);
           setIsAuthenticated(true);
-        } catch (err) {
-          setIsAuthenticated(false);
-          setUser(null);
         }
+      } catch (err) {
+        setIsAuthenticated(false);
+        setUser(null);
       }
     };
     checkAuth();

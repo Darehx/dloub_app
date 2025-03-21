@@ -1,0 +1,15 @@
+---
+// src/layouts/AuthLayout.astro
+import { useAuth } from '../context/AuthContext';
+
+const auth = useAuth();
+const isAuthenticated = auth.isAuthenticated;
+
+if (!isAuthenticated) {
+  // Redirige al usuario a /login si no está autenticado
+  return Astro.redirect('/login');
+}
+---
+
+<!-- Si el usuario está autenticado, renderiza el contenido -->
+<slot />
