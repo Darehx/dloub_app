@@ -1,69 +1,63 @@
 import axios from 'axios';
-import Cookies from 'js-cookie'; // Usamos js-cookie para manejar cookies
-import MockAdapter from 'axios-mock-adapter';
+import Cookies from 'js-cookie';
 
+// Configuración de la URL base de la API
+const DloubDDBB: string = 'http://localhost:8000/api/';
 
-
-// Importa los mocks usando `import`
-import tokenMock from './mocks/token.json';
-import tokenRefreshMock from './mocks/token-refresh.json';
-import userMock from './mocks/user.json';
-
+// Configuración de Axios
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'desarrollo' 
-    ? 'http://localhost:8000/api' 
-    : '', // BaseURL vacía para desarrollo
+  baseURL: DloubDDBB,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
 
-// Configuración de mocks para desarrollo
-if (process.env.NODE_ENV !== 'production') {
-  const mock = new MockAdapter(api, { delayResponse: 500 });
-
-  // Mock para inicio de sesión
-  mock.onPost('/api/token/').reply(200, tokenMock);
-  
-  // Mock para refresco de token
-  mock.onPost('/api/token/refresh/').reply(200, tokenRefreshMock);
-  
-  // Mock para datos de usuario
-  mock.onGet('/api/user/').reply(200, userMock);
-  
-  // Mock para manejar redirecciones
-  mock.onAny().reply(200, {});
-}
-
-api.interceptors.request.use((config) => {
-  const accessToken = Cookies.get('access_token'); // Obtén el token de acceso desde las cookies
+// Interceptor de request
+api.interceptors.request.use(config => {
+  const accessToken = Cookies.get('access_token');
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
   return config;
 });
 
+// Interceptor de response
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = error.config;
 
+    // Manejo de errores 401 (token expirado)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = Cookies.get('refresh_token'); // Obtén el token de actualización desde las cookies
-        const response = await axios.post('/token/refresh/', { refresh: refreshToken });
+        const refreshToken = Cookies.get('refresh_token');
+        if (!refreshToken) throw new Error('No refresh token');
 
-        // Guarda el nuevo token de acceso en las cookies
-        Cookies.set('access_token', response.data.access, { path: '/', secure: true, sameSite: 'strict' });
+        // Refrescar el token
+        const response = await axios.post(`${DloubDDBB}/token/refresh/`, { refresh: refreshToken });
+
+        // Guardar el nuevo token de acceso
+        Cookies.set('access_token', response.data.access, {
+          path: '/',
+          secure: false, // Cambia a `true` si usas HTTPS en producción
+          sameSite: 'strict',
+        });
+
+        // Actualizar el header de autorización
         api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+
+        // Reintentar la solicitud original
         return api(originalRequest);
       } catch (refreshError) {
-        // Elimina las cookies si hay un error al refrescar el token
+        // Eliminar cookies si falla el refresco del token
         Cookies.remove('access_token', { path: '/' });
         Cookies.remove('refresh_token', { path: '/' });
-        window.location.href = '/login';
+
+        // Redirigir al usuario al login
+        window.location.href = '/login?error=token_expired';
       }
     }
 
+    // Propagar el error si no es manejado
     return Promise.reject(error);
   }
 );

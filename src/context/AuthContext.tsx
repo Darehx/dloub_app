@@ -11,38 +11,37 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!Cookies.get('access_token'));
 
-  // Verifica la autenticación al montar el componente
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const accessToken = Cookies.get('access_token');
-        if (accessToken) {
-          const response = await api.get('/api/user/');
-          setUser(response.data);
-          setIsAuthenticated(true);
-        }
+        if (!accessToken) throw new Error('No token');
+        
+        const response = await api.get('/api/user/');
+        setUser(response.data);
+        setIsAuthenticated(true);
       } catch (err) {
         setIsAuthenticated(false);
         setUser(null);
+        Cookies.remove('access_token', { path: '/' });
+        Cookies.remove('refresh_token', { path: '/' });
       }
     };
     checkAuth();
   }, []);
 
   const login = (access: string, refresh: string, userData: any) => {
-    const cookieOptions = {
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict' as const,
-    };
+  // Configuración de cookies
+const cookieOptions = {
+  path: '/', // Ruta donde la cookie es válida
+  secure: process.env.NODE_ENV === 'production', // Solo usa HTTPS en producción
+  sameSite: 'strict' as const, // ✅ Valor válido para sameSite
+};
+    
     Cookies.set('access_token', access, cookieOptions);
     Cookies.set('refresh_token', refresh, cookieOptions);
     setUser(userData ?? null);

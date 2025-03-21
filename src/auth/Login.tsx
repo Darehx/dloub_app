@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
-import Crystal from '../components/common/Cristal';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState<string>('');
@@ -14,31 +13,56 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login } = useAuth();
 
+  const cookieOptions = {
+    path: '/',
+    secure: false, // Cambia a `true` si usas HTTPS en producción
+    sameSite: 'strict',
+  };
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+
+    const toastId = toast.loading('Iniciando sesión...', {
+      position: 'top-center',
+      style: { background: '#28395a', color: '#fff' },
+    });
+
     try {
       const response = await api.post('/token/', { username, password });
       const { access, refresh, user } = response.data;
 
-      const cookieOptions = {
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict' as const,
-      };
-
+      // Guardar tokens en cookies
       Cookies.set('access_token', access, cookieOptions);
       Cookies.set('refresh_token', refresh, cookieOptions);
 
+      // Actualizar el estado de autenticación
       login(access, refresh, user);
+
+      // Redirigir al usuario a la página deseada
       const from = (location.state as any)?.from?.pathname || '/dashboard';
       navigate(from);
+      toast.success('¡Sesión iniciada!', { id: toastId });
     } catch (err: any) {
-      if (err.response?.status === 401) {
-        toast.error('Credenciales inválidas. Inténtalo de nuevo.');
-      } else {
-        toast.error('Error al iniciar sesión. Intenta más tarde.');
+      let errorMessage = 'Error desconocido';
+
+      if (err.response) {
+        const { status, data } = err.response;
+
+        // Manejo de errores específicos
+        if (status === 400) {
+          errorMessage = data?.detail || 'Datos inválidos';
+        } else if (status === 401) {
+          errorMessage = data?.detail || 'Credenciales inválidas';
+        } else if (status === 404) {
+          errorMessage = 'Usuario no encontrado';
+        } else {
+          errorMessage = 'Error de autenticación';
+        }
       }
+
+      // Mostrar mensaje de error
+      toast.error(errorMessage, { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -47,11 +71,10 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <div className="w-full max-w-md p-8 space-y-6 bg-[#141f33] rounded-lg shadow-lg">
-        {/* Logo */}
         <div className="flex justify-center">
-          <img src='/1.png' className="h-28 w-auto" alt="Logo" />
+          <img src="/1.png" className="h-28 w-auto" alt="Logo" />
         </div>
-      
+
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300">Usuario</label>
@@ -80,9 +103,24 @@ const Login: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white transition-all duration-200 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+            className={`w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white transition-all duration-200 ${
+              loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            {loading ? 'Cargando...' : 'Entrar'}
+            {loading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l-1.75 1.75A9.959 9.959 0 002 22C2 23.104 2.896 24 4 24h16c1.104 0 2-.896 2-2v-4c0-1.104-.896-2-2-2H4z"
+                  />
+                </svg>
+                Cargando...
+              </>
+            ) : (
+              'Entrar'
+            )}
           </button>
         </form>
       </div>
