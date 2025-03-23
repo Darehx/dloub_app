@@ -1,12 +1,9 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-// Configuración de la URL base de la API
-const DloubDDBB: string = 'http://localhost:8000/api/';
-
-// Configuración de Axios
+// Configuración de la URL base de la API usando una variable de entorno
 const api = axios.create({
-  baseURL: DloubDDBB,
+  baseURL: import.meta.env.PUBLIC_API_URL, // Usa la variable de entorno
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
@@ -33,13 +30,13 @@ api.interceptors.response.use(
         if (!refreshToken) throw new Error('No refresh token');
 
         // Refrescar el token
-        const response = await axios.post(`${DloubDDBB}/token/refresh/`, { refresh: refreshToken });
+        const response = await axios.post(`${import.meta.env.PUBLIC_API_URL}/token/refresh/`, { refresh: refreshToken });
 
         // Guardar el nuevo token de acceso
         Cookies.set('access_token', response.data.access, {
           path: '/',
           secure: false, // Cambia a `true` si usas HTTPS en producción
-          sameSite: 'strict',
+          sameSite: 'strict', // ✅ Valor válido
         });
 
         // Actualizar el header de autorización

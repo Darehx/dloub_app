@@ -5,6 +5,15 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
 
+// Define manualmente el tipo para las opciones de las cookies
+interface CookieAttributes {
+  path?: string;
+  expires?: number | Date;
+  domain?: string;
+  secure?: boolean;
+  sameSite?: 'strict' | 'lax' | 'none' | undefined;
+}
+
 const Login: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -13,10 +22,11 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login } = useAuth();
 
-  const cookieOptions = {
+  // Usa el tipo definido manualmente
+  const cookieOptions: CookieAttributes = {
     path: '/',
     secure: false, // Cambia a `true` si usas HTTPS en producción
-    sameSite: 'strict',
+    sameSite: 'strict', // ✅ Valor válido
   };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
